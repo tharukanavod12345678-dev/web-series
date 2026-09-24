@@ -1,0 +1,26 @@
+# Site config — CDN domain → referer mapping
+sites:
+  xmaza.xxx:
+    cdn_domains:
+      - video.maalcdn.com
+    referer: https://xmaza.xxx/
+  uncutmaza.movie:
+    cdn_domains:
+      - cdn.azmaal.com
+    referer: https://uncutmaza.movie/
+  zmaal.net:
+    cdn_domains:
+      - video.maalcdn.com
+    referer: https://zmaal.net/
+  www.eporner.com:
+    extractor: ytdlp-native
+    referer: https://www.eporner.com/
+  www.aznude.com:
+    extractor: ytdlp-native
+    referer: https://www.aznude.com/
+
+referer_map:
+  video.maalcdn.com:
+    - https://xmaza.xxx/
+  cdn.azmaal.com:
+    - https://uncutmaza.movie/

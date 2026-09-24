@@ -1,0 +1,5 @@
+downloads/
+archive.txt
+*.part
+__pycache__/
+*.pyc
