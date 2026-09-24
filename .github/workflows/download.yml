@@ -1,7 +1,12 @@
-name: Series Downloader → Telegram
+name: Series Downloader → Release
 
 on:
   workflow_dispatch:
+    inputs:
+      urls:
+        description: 'URLs (one per line). ඕන නම් විතරයි — urls.txt fallback'
+        required: false
+        type: string
   push:
     paths:
       - 'urls.txt'
@@ -10,6 +15,8 @@ jobs:
   grab:
     runs-on: ubuntu-latest
     timeout-minutes: 350
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -31,6 +38,13 @@ jobs:
           pip install -U yt-dlp
           pip install -r requirements.txt
 
+      - name: Write URLs from input
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.urls != ''
+        run: |
+          cat > urls.txt <<'EOF'
+          ${{ github.event.inputs.urls }}
+          EOF
+
       - name: Download
         run: python download.py
 
@@ -41,57 +55,17 @@ jobs:
           find downloads -type f -printf "%s\t%p\n" 2>/dev/null | sort -nr || true
           du -sh downloads/ 2>/dev/null || true
 
-      - name: Upload to Telegram
+      - name: Create Release
         if: always()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "Telegram secrets missing — skipping upload."
-            exit 0
-          fi
-
-          shopt -s nullglob
-          files=(downloads/*.{mp4,mkv,webm,avi})
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "No videos to upload."
-            exit 0
-          fi
-
-          for f in "${files[@]}"; do
-            size=$(stat -c%s "$f")
-            name=$(basename "$f")
-            echo "→ $name  ($((size/1024/1024)) MB)"
-
-            if [ "$size" -gt 1900000000 ]; then
-              echo "  too large for bot API (2GB), skipping"
-              continue
-            fi
-
-            curl -sS -X POST \
-              "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
-              -F "chat_id=${TELEGRAM_CHAT_ID}" \
-              -F "document=@${f}" \
-              -F "caption=${name}" \
-              -F "supports_streaming=true" \
-              --max-time 1800 \
-              -o /tmp/tg.json || true
-
-            if grep -q '"ok":true' /tmp/tg.json 2>/dev/null; then
-              echo "  uploaded ✓"
-            else
-              echo "  failed:"
-              cat /tmp/tg.json 2>/dev/null || true
-            fi
-          done
-
-      - name: Upload artifacts (backup)
-        if: always()
-        uses: actions/upload-artifact@v4
+        uses: softprops/action-gh-release@v2
         with:
-          name: videos-${{ github.run_number }}
-          path: downloads/
-          retention-days: 3
-          if-no-files-found: warn
-          compression-level: 0
+          tag_name: run-${{ github.run_number }}
+          name: "Series run #${{ github.run_number }}"
+          body: |
+            Automated download — run #${{ github.run_number }}
+            Date: ${{ github.event.repository.updated_at }}
+          files: downloads/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
