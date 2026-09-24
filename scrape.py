@@ -27,21 +27,29 @@ def extract_urls(page_url: str) -> list[str]:
     r.raise_for_status()
     html = r.text
 
-    found = []
+    raw = []
     for pat in CDN_PATTERNS:
         for m in re.findall(pat, html):
             m = m.replace("&amp;", "&")
-            if m not in found:
-                found.append(m)
+            raw.append(m)
 
     # <video src> / <source src> fallback
     for m in re.findall(r'<(?:video|source)[^>]+src=["\']([^"\']+)["\']', html, re.I):
         if m.startswith("//"):
             m = "https:" + m
-        if (".mp4" in m or ".m3u8" in m) and m not in found:
-            found.append(m)
+        if ".mp4" in m or ".m3u8" in m:
+            raw.append(m)
 
-    return found
+    # dedupe by DECODED form — encoded සහ decoded එකම URL එකක්
+    from urllib.parse import unquote
+    seen = set()
+    out = []
+    for u in raw:
+        key = unquote(u)
+        if key not in seen:
+            seen.add(key)
+            out.append(u)
+    return out
 
 if __name__ == "__main__":
     for page in sys.argv[1:]:
