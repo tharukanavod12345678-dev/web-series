@@ -3,7 +3,7 @@
 import re
 import sys
 import requests
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
@@ -28,6 +28,8 @@ def extract_urls(page_url: str) -> list[str]:
     html = r.text
 
     raw = []
+
+    # CDN patterns
     for pat in CDN_PATTERNS:
         for m in re.findall(pat, html):
             m = m.replace("&amp;", "&")
@@ -40,15 +42,15 @@ def extract_urls(page_url: str) -> list[str]:
         if ".mp4" in m or ".m3u8" in m:
             raw.append(m)
 
-    # dedupe by DECODED form — encoded සහ decoded එකම URL එකක්
-    from urllib.parse import unquote
+    # dedupe by DECODED form — %20 සහ space එකම එකක්
     seen = set()
     out = []
     for u in raw:
-        key = unquote(u)
+        key = unquote(u).strip()
         if key not in seen:
             seen.add(key)
             out.append(u)
+
     return out
 
 if __name__ == "__main__":
