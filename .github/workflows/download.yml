@@ -4,12 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       urls:
-        description: 'URLs (one per line). ඕන නම් විතරයි — urls.txt fallback'
-        required: false
+        description: 'URLs (එක line එකකට එකක්)'
+        required: true
         type: string
-  push:
-    paths:
-      - 'urls.txt'
+      quality:
+        description: 'Quality (best / 720 / 480)'
+        required: false
+        default: 'best'
+        type: choice
+        options:
+          - best
+          - 720
+          - 480
 
 jobs:
   grab:
@@ -38,15 +44,18 @@ jobs:
           pip install -U yt-dlp
           pip install -r requirements.txt
 
-      - name: Write URLs from input
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.urls != ''
+      - name: Write URLs
         run: |
-          cat > urls.txt <<'EOF'
+          cat > /tmp/urls.txt <<'EOF'
           ${{ github.event.inputs.urls }}
           EOF
+          echo "=== URLs ==="
+          cat /tmp/urls.txt
 
       - name: Download
-        run: python download.py
+        env:
+          QUALITY: ${{ github.event.inputs.quality }}
+        run: python download.py --urls /tmp/urls.txt
 
       - name: List downloads
         if: always()
@@ -63,7 +72,6 @@ jobs:
           name: "Series run #${{ github.run_number }}"
           body: |
             Automated download — run #${{ github.run_number }}
-            Date: ${{ github.event.repository.updated_at }}
           files: downloads/*
           draft: false
           prerelease: false
