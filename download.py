@@ -35,8 +35,12 @@ def is_direct_media(url: str) -> bool:
     return bool(re.search(r"\.(mp4|m3u8|webm|mkv)(\?|$)", url, re.I))
 
 def is_presigned(url: str) -> bool:
-    return "X-Amz-Signature" in url or "Signature=" in url or "token=" in url
-
+    if "X-Amz-Signature" in url or "Signature=" in url or "token=" in url:
+        return True
+    if re.search(r"[?&]t=[A-Za-z0-9_\-]{20,}", url) and re.search(r"[?&]e=\d+", url):
+        return True
+    return False
+      
 def safe_name(url: str) -> str:
     path = urlparse(url).path
     name = path.rsplit("/", 1)[-1] or "video.mp4"
