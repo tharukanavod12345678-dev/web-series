@@ -12,6 +12,15 @@ sites:
     cdn_domains:
       - video.maalcdn.com
     referer: https://zmaal.net/
+  pornxnow.me:
+    cdn_domains:
+      - s1.pxnw.xyz
+      - s2.pxnw.xyz
+      - s3.pxnw.xyz
+      - pxnw.xyz
+    referer: https://pornxnow.me/
+    signed: true
+    token_ttl: 43200
   www.eporner.com:
     extractor: ytdlp-native
     referer: https://www.eporner.com/
@@ -24,3 +33,11 @@ referer_map:
     - https://xmaza.xxx/
   cdn.azmaal.com:
     - https://uncutmaza.movie/
+    s1.pxnw.xyz:
+    - https://pornxnow.me/
+  s2.pxnw.xyz:
+    - https://pornxnow.me/
+  s3.pxnw.xyz:
+    - https://pornxnow.me/
+  pxnw.xyz:
+    - https://pornxnow.me/
